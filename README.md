@@ -34,7 +34,7 @@
 
 ### 截止目前，推荐使用sing-box官方V1.10.0系列正式版本
 
-### 一键脚本，快捷方式：```sb```
+### VPS专用一键脚本，快捷方式：```sb```
 ```
 bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/sb.sh)
 ```
@@ -69,6 +69,8 @@ bash <(wget -qO- https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/sb
 ```
 bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/serv00.sh)
 ```
+### Sing-box-serv00脚本界面预览图（注：仅供围观）
+![e8e20bb88b3812e88631d8d64d39f02](https://github.com/user-attachments/assets/0e375140-e5cd-46f0-8819-594c655618ba)
 
 
 ### 2、Serv00多账号自动部署脚本：serv00.yml（github专用）
@@ -87,7 +89,15 @@ curl -sSL https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/kp.sh -o 
 ```
 运行```bash kp.sh```可测试有效性 
 
-### 注意：serv00.yml与kp.sh都为"强制保活脚本"，就算Serv00清空你服务器上所有文件，只要让你连接成功，就会自动安装脚本保活，保持不死状态
+### 注意：
+
+1、serv00.yml与kp.sh都为"强制保活脚本"，就算Serv00清空你服务器上所有文件，只要让你连接成功，就会自动安装脚本保活，保持不死状态
+
+2、github也可以不设置定时，在以下两行前加一个```#```字符即可屏蔽定时运行。当发现节点失效，进actions自己启动一次也可
+
+``` #  schedule: ```
+
+``` #   - cron: '0 */4 * * *' ```
 
 -----------------------------------------------------
 
