@@ -21,11 +21,16 @@ export IP=${IP:-''}
 export reym=${reym:-''}
 export reset=${reset:-''}
 
+USERNAME=$(whoami | tr '[:upper:]' '[:lower:]')
+HOSTNAME=$(hostname)
 if [[ "$reset" =~ ^[Yy]$ ]]; then
-crontab -l | grep -v "serv00keep" >rmcron
-crontab rmcron >/dev/null 2>&1
-rm rmcron
+#crontab -l | grep -v "serv00keep" >rmcron
+#crontab rmcron >/dev/null 2>&1
+#rm rmcron
 bash -c 'ps aux | grep $(whoami) | grep -v "sshd\|bash\|grep" | awk "{print \$2}" | xargs -r kill -9 >/dev/null 2>&1' >/dev/null 2>&1
+rm -rf domains bin serv00keep.sh
+sed -i '/export PATH="\$HOME\/bin:\$PATH"/d' "${HOME}/.bashrc" >/dev/null 2>&1
+source "${HOME}/.bashrc" >/dev/null 2>&1
 find ~ -type f -exec chmod 644 {} \; 2>/dev/null
 find ~ -type d -exec chmod 755 {} \; 2>/dev/null
 find ~ -type f -exec rm -f {} \; 2>/dev/null
@@ -34,24 +39,24 @@ find ~ -exec rm -rf {} \; 2>/dev/null
 echo "重置系统完成"
 fi
 sleep 2
-USERNAME=$(whoami)
-HOSTNAME=$(hostname)
-[[ "$HOSTNAME" == "s1.ct8.pl" ]] && export WORKDIR="domains/${USERNAME}.ct8.pl/logs" || export WORKDIR="domains/${USERNAME}.serv00.net/logs"
+devil www add ${USERNAME}.serv00.net php > /dev/null 2>&1
+FILE_PATH="${HOME}/domains/${USERNAME}.serv00.net/public_html"
+WORKDIR="${HOME}/domains/${USERNAME}.serv00.net/logs"
 [ -d "$WORKDIR" ] || (mkdir -p "$WORKDIR" && chmod 777 "$WORKDIR")
 
 read_ip(){
 nb=$(echo "$HOSTNAME" | cut -d '.' -f 1 | tr -d 's')
 ym=("$HOSTNAME" "cache$nb.serv00.com" "web$nb.serv00.com")
-rm -rf ip.txt
-for ym in "${ym[@]}"; do
-# 引用frankiejun API
-response=$(curl -s "https://ss.botai.us.kg/api/getip?host=$ym")
-if [[ -z "$response" ]]; then
+rm -rf ip.txt hy2ip.txt
 for ip in "${ym[@]}"; do
-dig @8.8.8.8 +time=2 +short $ip >> ip.txt
+dig @8.8.8.8 +time=2 +short $ip >> hy2ip.txt
 sleep 1  
 done
-break
+for host in "${ym[@]}"; do
+response=$(curl -sL --connect-timeout 5 --max-time 7 "https://ss.serv0.us.kg/api/getip?host=$host")
+if [[ "$response" =~ ^$|unknown|not|error ]]; then
+dig @8.8.8.8 +time=2 +short $host >> ip.txt
+sleep 1  
 else
 echo "$response" | while IFS='|' read -r ip status; do
 if [[ $status == "Accessible" ]]; then
@@ -182,6 +187,7 @@ if [[ $tcp_ports -ne 2 || $udp_ports -ne 1 ]]; then
         done
     fi
     echo "端口已调整完成,将断开ssh连接"
+    sleep 3
     devil binexec on >/dev/null 2>&1
     kill -9 $(ps -o ppid= -p $$) >/dev/null 2>&1
 else
@@ -190,8 +196,9 @@ else
     tcp_port2=$(echo "$tcp_ports" | sed -n '2p')
     udp_port=$(echo "$port_list" | awk '/udp/ {print $1}')
 
-    echo "当前TCP端口: $tcp_port1 和 $tcp_port2"
-    echo "当前UDP端口: $udp_port"
+    echo "你的vless-reality的TCP端口: $tcp_port1" 
+    echo "你的vmess的TCP端口(设置Argo固定域名端口)：$tcp_port2"
+    echo "你的hysteria2的UDP端口: $udp_port"
 fi
 export vless_port=$tcp_port1
 export vmess_port=$tcp_port2
@@ -274,10 +281,12 @@ openssl ecparam -genkey -name prime256v1 -out "private.key"
 openssl req -new -x509 -days 3650 -key "private.key" -out "cert.pem" -subj "/CN=$USERNAME.serv00.net"
 
 nb=$(hostname | cut -d '.' -f 1 | tr -d 's')
-if [ "$nb" == "14" ]; then
+if [[ "$nb" =~ (14|15|16) ]]; then
 ytb='"jnn-pa.googleapis.com",'
 fi
-
+hy1p=$(sed -n '1p' hy2ip.txt)
+hy2p=$(sed -n '2p' hy2ip.txt)
+hy3p=$(sed -n '3p' hy2ip.txt)
   cat > config.json << EOF
 {
   "log": {
@@ -289,7 +298,49 @@ fi
     {
        "tag": "hysteria-in",
        "type": "hysteria2",
-       "listen": "$IP",
+       "listen": "$hy1p",
+       "listen_port": $hy2_port,
+       "users": [
+         {
+             "password": "$UUID"
+         }
+     ],
+     "masquerade": "https://www.bing.com",
+     "ignore_client_bandwidth":false,
+     "tls": {
+         "enabled": true,
+         "alpn": [
+             "h3"
+         ],
+         "certificate_path": "cert.pem",
+         "key_path": "private.key"
+        }
+    },
+        {
+       "tag": "hysteria-in",
+       "type": "hysteria2",
+       "listen": "$hy2p",
+       "listen_port": $hy2_port,
+       "users": [
+         {
+             "password": "$UUID"
+         }
+     ],
+     "masquerade": "https://www.bing.com",
+     "ignore_client_bandwidth":false,
+     "tls": {
+         "enabled": true,
+         "alpn": [
+             "h3"
+         ],
+         "certificate_path": "cert.pem",
+         "key_path": "private.key"
+        }
+    },
+        {
+       "tag": "hysteria-in",
+       "type": "hysteria2",
+       "listen": "$hy3p",
        "listen_port": $hy2_port,
        "users": [
          {
@@ -372,19 +423,28 @@ fi
     {
       "type": "direct",
       "tag": "direct"
-    },
-    {
-      "type": "block",
-      "tag": "block"
     }
   ],
    "route": {
+       "rule_set": [
+      {
+        "tag": "geosite-google-gemini",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-google-gemini.srs",
+        "download_detour": "direct"
+      }
+    ],
     "rules": [
     {
      "domain": [
      $ytb
      "oh.my.god"
       ],
+     "outbound": "wg"
+    },
+    {
+     "rule_set":"geosite-google-gemini",
      "outbound": "wg"
     }
     ],
@@ -393,8 +453,8 @@ fi
 }
 EOF
 
-if ! ps aux | grep '[c]onfig' > /dev/null; then
-ps aux | grep '[c]onfig' | awk '{print $2}' | xargs -r kill -9 > /dev/null 2>&1
+if ! ps aux | grep '[r]un -c con' > /dev/null; then
+ps aux | grep '[r]un -c con' | awk '{print $2}' | xargs -r kill -9 > /dev/null 2>&1
 if [ -e "$(basename "${FILE_MAP[web]}")" ]; then
    echo "$(basename "${FILE_MAP[web]}")" > sb.txt
    sbb=$(cat sb.txt)   
@@ -454,11 +514,13 @@ fi
 else
    agg=$(cat ag.txt)
     if [[ $ARGO_AUTH =~ ^[A-Z0-9a-z=]{120,250}$ ]]; then
-      args="tunnel --edge-ip-version auto --no-autoupdate --protocol http2 run --token ${ARGO_AUTH}"
+      #args="tunnel --edge-ip-version auto --no-autoupdate --protocol http2 run --token ${ARGO_AUTH}"
+      args="tunnel --no-autoupdate run --token ${ARGO_AUTH}"
     elif [[ $ARGO_AUTH =~ TunnelSecret ]]; then
       args="tunnel --edge-ip-version auto --config tunnel.yml run"
     else
-     args="tunnel --edge-ip-version auto --no-autoupdate --protocol http2 --logfile boot.log --loglevel info --url http://localhost:$vmess_port"
+     #args="tunnel --edge-ip-version auto --no-autoupdate --protocol http2 --logfile boot.log --loglevel info --url http://localhost:$vmess_port"
+     args="tunnel --url http://localhost:$vmess_port --no-autoupdate --logfile boot.log --loglevel info"
     fi
     nohup ./"$agg" $args >/dev/null 2>&1 &
     sleep 10
@@ -473,11 +535,11 @@ else
 fi
 fi
 }
-if [ -z "$ARGO_DOMAIN" ] && ! ps aux | grep "[l]ocalhost:$vmess_port" > /dev/null; then
-ps aux | grep '[l]ocalhost' | awk '{print $2}' | xargs -r kill -9 > /dev/null 2>&1
+if [ -z "$ARGO_DOMAIN" ] && ! ps aux | grep '[t]unnel --u' > /dev/null; then
+ps aux | grep '[t]unnel --u' | awk '{print $2}' | xargs -r kill -9 > /dev/null 2>&1
 cfgo
-elif [ -n "$ARGO_DOMAIN" ] && ! ps aux | grep "[t]oken $ARGO_AUTH" > /dev/null; then
-ps aux | grep '[t]oken' | awk '{print $2}' | xargs -r kill -9 > /dev/null 2>&1
+elif [ -n "$ARGO_DOMAIN" ] && ! ps aux | grep '[t]unnel --n' > /dev/null; then
+ps aux | grep '[t]unnel --n' | awk '{print $2}' | xargs -r kill -9 > /dev/null 2>&1
 cfgo
 else
 green "Arog进程已启动"
@@ -503,7 +565,7 @@ get_argodomain() {
     local argodomain=""
     while [[ $retry -lt $max_retries ]]; do
     ((retry++)) 
-    argodomain=$(grep -oE 'https://[[:alnum:]+\.-]+\.trycloudflare\.com' boot.log 2>/dev/null | sed 's@https://@@')
+    argodomain=$(cat boot.log 2>/dev/null | grep -a trycloudflare.com | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}')
       if [[ -n $argodomain ]]; then
         break
       fi
@@ -964,7 +1026,7 @@ proxies:
       Host: $argodomain 
 
 proxy-groups:
-- name: 负载均衡
+- name: Balance
   type: load-balance
   url: https://www.gstatic.com/generate_204
   interval: 300
@@ -976,7 +1038,7 @@ proxy-groups:
     - vmess-tls-argo-$NAME
     - vmess-argo-$NAME
 
-- name: 自动选择
+- name: Auto
   type: url-test
   url: https://www.gstatic.com/generate_204
   interval: 300
@@ -988,11 +1050,11 @@ proxy-groups:
     - vmess-tls-argo-$NAME
     - vmess-argo-$NAME
     
-- name: 🌍选择代理节点
+- name: Select
   type: select
   proxies:
-    - 负载均衡                                         
-    - 自动选择
+    - Balance                                         
+    - Auto
     - DIRECT
     - vless-reality-vision-$NAME                              
     - vmess-ws-$NAME
@@ -1002,16 +1064,25 @@ proxy-groups:
 rules:
   - GEOIP,LAN,DIRECT
   - GEOIP,CN,DIRECT
-  - MATCH,🌍选择代理节点
+  - MATCH,Select
   
 EOF
 
-sibsub=$(cat sing_box.json 2>/dev/null)
-clmsub=$(cat clash_meta.yaml 2>/dev/null)
-echo
 sleep 2
+[ -d "$FILE_PATH" ] || mkdir -p "$FILE_PATH"
+echo "$baseurl" > ${FILE_PATH}/${UUID}_v2sub.txt
+cat clash_meta.yaml > ${FILE_PATH}/${UUID}_clashmeta.txt
+cat sing_box.json > ${FILE_PATH}/${UUID}_singbox.txt
+V2rayN_LINK="https://${USERNAME}.serv00.net/${UUID}_v2sub.txt"
+Clashmeta_LINK="https://${USERNAME}.serv00.net/${UUID}_clashmeta.txt"
+Singbox_LINK="https://${USERNAME}.serv00.net/${UUID}_singbox.txt"
+allip=$(cat hy2ip.txt)
 cat > list.txt <<EOF
 =================================================================================================
+
+当前客户端正在使用的IP：$IP ,如默认节点IP被墙，可在客户端地址更换以下其他IP
+$allip
+-------------------------------------------------------------------------------------------------
 
 一、Vless-reality分享链接如下：
 $vl_link
@@ -1058,25 +1129,27 @@ $hy2_link
 -------------------------------------------------------------------------------------------------
 
 
-四、以上五个节点的聚合通用分享链接如下：
+四、以上五个节点的聚合通用订阅分享链接如下：
+$V2rayN_LINK
+
+以上五个节点聚合通用分享码：
 $baseurl
 -------------------------------------------------------------------------------------------------
+
+
+五、查看Sing-box与Clash-meta的订阅配置文件，请进入主菜单选择4
+
+Clash-meta订阅分享链接：
+$Clashmeta_LINK
+
+Sing-box订阅分享链接：
+$Singbox_LINK
+-------------------------------------------------------------------------------------------------
+
+=================================================================================================
+
 EOF
 cat list.txt
-echo "-------------------------------------------------------------------------------------------------"
-sleep 2
-echo
-echo "五、查看Clash-meta订阅配置文件"
-cat clash_meta.yaml
-echo "-------------------------------------------------------------------------------------------------"
-sleep 2
-echo
-echo "六、查看Sing-box订阅配置文件"
-cat sing_box.json
-echo
-echo "-------------------------------------------------------------------------------------------------"
-echo "================================================================================================="
-echo
 sleep 2
 rm -rf sb.log core tunnel.yml tunnel.json fake_useragent_0.2.0.json
 }
@@ -1088,5 +1161,6 @@ argo_configure
 uuidport
 download_and_run_singbox
 get_links
+cd
 }
 install_singbox

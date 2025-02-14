@@ -57,8 +57,6 @@ bash <(wget -qO- https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/sb
 
 本项目分享订阅节点为本地化生成，不使用节点转换等第三方外链引用，无需担心节点订阅被外链作者查看
 
-目前SSH脚本与github/VPS脚本已同步更新，可以不用在网站面端设置端口，脚本随机生成可用端口，避免无效端口造成节点无法使用
-
 #### 相关说明及注意点请查看[甬哥博客说明与Serv00视频教程](https://ygkkk.blogspot.com/2025/01/serv00.html)
 
 #### 视频教程：
@@ -67,20 +65,21 @@ bash <(wget -qO- https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/sb
 
 [Serv00免费节点最终教程：Serv00不必再登录SSH了，部署保活融为一体，独家支持Github、VPS、软路由多平台多账户通用部署，四大方案总有一款适合你](https://youtu.be/rYeX1iU_iZ0)
 
-### 1、Serv00本地专用一键脚本，快捷方式：```bash serv00.sh```
+### 方案一、Serv00-sb-yg本地专用一键脚本，快捷方式：```sb```
 ```
 bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/serv00.sh)
 ```
-### Sing-box-serv00脚本界面预览图（注：仅供围观）
-![e8e20bb88b3812e88631d8d64d39f02](https://github.com/user-attachments/assets/0e375140-e5cd-46f0-8819-594c655618ba)
+
+### Serv00-sb-yg脚本界面预览图（注：仅供围观）
+![551527748262aad71f58327be9fafa3](https://github.com/user-attachments/assets/26dbda95-9dd3-4244-b9ac-fa5da040734e)
 
 
-### 2、Serv00多账号自动部署脚本：serv00.yml（github专用）
+### 方案二、Serv00多账号自动部署脚本：serv00.yml（github专用）
 
 创建私有库，修改serv00.yml文件的参数，运行github action，自动远程部署且保活单个或多个Serv00账号的节点
 
 
-### 3、Serv00多账号自动部署脚本：kp.sh（VPS、软路由专用）
+### 方案三、Serv00多账号自动部署脚本：kp.sh（VPS、软路由专用）
 
 修改kp.sh文件的参数，可在多个平台上自动远程部署且保活单个或多个Serv00账号的节点，不可用在serv00本地上，默认nano编辑形式
 
@@ -100,6 +99,8 @@ curl -sSL https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/kp.sh -o 
 ``` #  schedule: ```
 
 ``` #   - cron: '0 */4 * * *' ```
+
+3、方案一与方案二、三不可混用，方案二与三可相互无缝替换
 
 -----------------------------------------------------
 
