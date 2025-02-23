@@ -16,6 +16,7 @@ devil www add ${USERNAME}.serv00.net php > /dev/null 2>&1
 FILE_PATH="${HOME}/domains/${USERNAME}.serv00.net/public_html"
 WORKDIR="${HOME}/domains/${USERNAME}.serv00.net/logs"
 [ -d "$WORKDIR" ] || (mkdir -p "$WORKDIR" && chmod 777 "$WORKDIR")
+curl -sk "http://${snb}.${USERNAME}.serv00.net/up" > /dev/null 2>&1
 
 read_ip() {
 cat ip.txt
@@ -41,9 +42,9 @@ read_uuid() {
 }
 
 read_reym() {
-        yellow "方式一：回车使用CF域名，支持proxyip+非标端口反代ip功能 (推荐)"
-	yellow "方式二：输入 s 表示使用Serv00自带域名，不支持proxyip功能 (推荐)"
-        yellow "方式三：支持其他域名，注意要符合reality域名规则"
+        yellow "方式一：(推荐)使用CF域名，支持proxyip+非标端口反代ip功能：输入回车"
+	yellow "方式二：(推荐)使用Serv00自带域名，不支持proxyip功能：输入s"
+        yellow "方式三：支持其他域名，注意要符合reality域名规则：输入域名"
         reading "请输入reality域名 【请选择 回车 或者 s 或者 输入域名】: " reym
         if [[ -z "$reym" ]]; then
            reym=www.speedtest.net
@@ -51,6 +52,21 @@ read_reym() {
            reym=$USERNAME.serv00.net
         fi
 	green "你的reality域名为: $reym"
+}
+
+resallport(){
+portlist=$(devil port list | grep -E '^[0-9]+[[:space:]]+[a-zA-Z]+' | sed 's/^[[:space:]]*//')
+if [[ -z "$portlist" ]]; then
+yellow "无端口"
+else
+while read -r line; do
+port=$(echo "$line" | awk '{print $1}')
+port_type=$(echo "$line" | awk '{print $2}')
+yellow "删除端口 $port ($port_type)"
+devil port del "$port_type" "$port"
+done <<< "$portlist"
+fi
+check_port
 }
 
 check_port () {
@@ -112,6 +128,7 @@ if [[ $tcp_ports -ne 2 || $udp_ports -ne 1 ]]; then
     green "端口已调整完成,将断开ssh连接,请重新连接shh重新执行脚本"
     devil binexec on >/dev/null 2>&1
     kill -9 $(ps -o ppid= -p $$) >/dev/null 2>&1
+    sleep 2
 else
     tcp_ports=$(echo "$port_list" | awk '/tcp/ {print $1}')
     tcp_port1=$(echo "$tcp_ports" | sed -n '1p')
@@ -121,21 +138,18 @@ else
     purple "当前TCP端口: $tcp_port1 和 $tcp_port2"
     purple "当前UDP端口: $udp_port"
 fi
-
 export vless_port=$tcp_port1
 export vmess_port=$tcp_port2
 export hy2_port=$udp_port
 green "你的vless-reality端口: $vless_port"
 green "你的vmess-ws端口(设置Argo固定域名端口): $vmess_port"
 green "你的hysteria2端口: $hy2_port"
-sleep 2
 }
 
 install_singbox() {
 if [[ -e $WORKDIR/list.txt ]]; then
 yellow "已安装sing-box，请先选择2卸载，再执行安装" && exit
 fi
-yellow "为确保节点可用性，建议在Serv00网页不设置端口，脚本会随机生成有效端口"
 sleep 2
         cd $WORKDIR
 	echo
@@ -186,7 +200,8 @@ reading "\n清理所有进程并清空所有安装内容，将退出ssh连接，
   case "$choice" in
     [Yy]) 
     bash -c 'ps aux | grep $(whoami) | grep -v "sshd\|bash\|grep" | awk "{print \$2}" | xargs -r kill -9 >/dev/null 2>&1' >/dev/null 2>&1
-    rm -rf domains bin serv00keep.sh
+    devil www del ${snb}.${USERNAME}.serv00.net > /dev/null 2>&1
+    devil www del ${USERNAME}.serv00.net > /dev/null 2>&1
     sed -i '/export PATH="\$HOME\/bin:\$PATH"/d' "${HOME}/.bashrc" >/dev/null 2>&1
     source "${HOME}/.bashrc" >/dev/null 2>&1 
     #crontab -l | grep -v "serv00keep" >rmcron
@@ -206,10 +221,10 @@ reading "\n清理所有进程并清空所有安装内容，将退出ssh连接，
 # Generating argo Config
 argo_configure() {
   while true; do
-    yellow "方式一：Argo临时隧道 (无需域名，推荐)"
-    yellow "方式二：Argo固定隧道 (需要域名，需要CF设置提取Token)"
+    yellow "方式一：(推荐)无需域名的Argo临时隧道：输入回车"
+    yellow "方式二：需要域名的Argo固定隧道(需要CF设置提取Token)：输入g"
     echo -e "${red}注意：${purple}Argo固定隧道使用Token时，需要在cloudflare后台设置隧道端口，该端口必须与vmess-ws的tcp端口 $vmess_port 一致)${re}"
-    reading "输入 g 表示使用Argo固定隧道，回车跳过表示使用Argo临时隧道 【请选择 g 或者 回车】: " argo_choice
+    reading "【请选择 g 或者 回车】: " argo_choice
     if [[ "$argo_choice" != "g" && "$argo_choice" != "G" && -n "$argo_choice" ]]; then
         red "无效的选择，请输入 g 或回车"
         continue
@@ -453,19 +468,15 @@ hy3p=$(sed -n '3p' hy2ip.txt)
     {
       "type": "direct",
       "tag": "direct"
-    },
-    {
-      "type": "block",
-      "tag": "block"
     }
   ],
    "route": {
        "rule_set": [
       {
-        "tag": "geosite-google-gemini",
+        "tag": "google-gemini",
         "type": "remote",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-google-gemini.srs",
+        "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/google-gemini.srs",
         "download_detour": "direct"
       }
     ],
@@ -478,7 +489,7 @@ hy3p=$(sed -n '3p' hy2ip.txt)
      "outbound": "wg"
      },
      {
-     "rule_set":"geosite-google-gemini",
+     "rule_set":"google-gemini",
      "outbound": "wg"
     }
     ],
@@ -510,7 +521,6 @@ for ((i=1; i<=5; i++)); do
 done
 fi
 fi
-
 if [ -e "$(basename "${FILE_MAP[bot]}")" ]; then
    echo "$(basename "${FILE_MAP[bot]}")" > ag.txt
    agg=$(cat ag.txt)
@@ -523,25 +533,33 @@ if [ -e "$(basename "${FILE_MAP[bot]}")" ]; then
     else
      #args="tunnel --edge-ip-version auto --no-autoupdate --protocol http2 --logfile boot.log --loglevel info --url http://localhost:$vmess_port"
      args="tunnel --url http://localhost:$vmess_port --no-autoupdate --logfile boot.log --loglevel info"
-    fi
+    fi    
     nohup ./"$agg" $args >/dev/null 2>&1 &
     sleep 10
 if pgrep -x "$agg" > /dev/null; then
     green "$agg Argo进程已启动"
 else
-    red "$agg Argo进程未启动, 重启中..."
+for ((i=1; i<=5; i++)); do
+    red "$agg Argo进程未启动, 重启中...(尝试次数: $i)"
     pkill -x "$agg"
     nohup ./"$agg" "${args}" >/dev/null 2>&1 &
     sleep 5
-    purple "$agg Argo进程已重启"
+    if pgrep -x "$agg" > /dev/null; then
+        purple "$agg Argo进程已成功重启"
+        break
+    fi
+    if [[ $i -eq 5 ]]; then
+        red "$agg Argo进程重启失败，Argo节点暂不可用(保活过程中会自动恢复)，其他节点依旧可用"
+    fi
+done
 fi
 fi
 sleep 2
 if ! pgrep -x "$(cat sb.txt)" > /dev/null; then
 red "主进程未启动，根据以下情况一一排查"
 yellow "1、网页端权限是否开启"
-yellow "2、网页后台删除所有端口，让脚本自动生成随机可用端口"
-yellow "3、选择5重置"
+yellow "2、选择7重置端口，自动生成随机可用端口（重要）"
+yellow "3、选择8重置"
 yellow "4、当前Serv00服务器炸了？等会再试"
 red "5、以上都试了，哥直接躺平，交给进程保活，过会再来看"
 sleep 6
@@ -565,7 +583,7 @@ get_argodomain() {
       sleep 2
     done  
     if [ -z ${argodomain} ]; then
-    argodomain="Argo临时域名暂时获取失败，Argo节点暂不可用，其他节点依旧可用"
+    argodomain="Argo临时域名暂时获取失败，Argo节点暂不可用(保活过程中会自动恢复)，其他节点依旧可用"
     fi
     echo "$argodomain"
   fi
@@ -1073,7 +1091,8 @@ allip=$(cat hy2ip.txt)
 cat > list.txt <<EOF
 =================================================================================================
 
-当前客户端正在使用的IP：$IP ,如默认节点IP被墙，可在客户端地址更换以下其他IP
+当前客户端正在使用的IP：$IP
+如默认节点IP被墙，可在客户端地址更换以下其他IP
 $allip
 -------------------------------------------------------------------------------------------------
 
@@ -1202,10 +1221,9 @@ keep_path="$HOME/domains/${snb}.${USERNAME}.serv00.net/public_nodejs"
 [ -d "$keep_path" ] || mkdir -p "$keep_path"
 curl -sL https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/app.js -o "$keep_path"/app.js
 sed -i '' "15s/name/$snb/g" "$keep_path"/app.js
-sed -i '' "37s/key/$UUID/g" "$keep_path"/app.js
-sed -i '' "52s/key/$UUID/g" "$keep_path"/app.js
-sed -i '' "52s/name/$USERNAME/g" "$keep_path"/app.js
-sed -i '' "52s/where/$snb/g" "$keep_path"/app.js
+sed -i '' "38s/key/$UUID/g" "$keep_path"/app.js
+sed -i '' "53s/name/$USERNAME/g" "$keep_path"/app.js
+sed -i '' "53s/where/$snb/g" "$keep_path"/app.js
 devil www del ${snb}.${USERNAME}.serv00.net > /dev/null 2>&1
 devil www add ${USERNAME}.serv00.net php > /dev/null 2>&1
 devil www add ${snb}.${USERNAME}.serv00.net nodejs /usr/local/bin/node18 > /dev/null 2>&1
@@ -1219,7 +1237,7 @@ cd "$keep_path"
 npm install basic-auth express dotenv axios --silent > /dev/null 2>&1
 rm $HOME/domains/${snb}.${USERNAME}.serv00.net/public_nodejs/public/index.html > /dev/null 2>&1
 devil www restart ${snb}.${USERNAME}.serv00.net
-rm -rf $HOME/domains/${snb}.${USERNAME}.serv00.net/logs/*
+curl -sk "http://${snb}.${USERNAME}.serv00.net/up" > /dev/null 2>&1
 green "安装完毕，多功能主页地址：http://${snb}.${USERNAME}.serv00.net" && sleep 2
 }
 
@@ -1278,12 +1296,10 @@ else
 red "未安装脚本，请选择1进行安装" && exit
 fi
 }
-#主菜单
+
 menu() {
    clear
    echo "============================================================"
-   purple "修改自Serv00老王sing-box安装脚本"
-   purple "转载请著名出自老王，请勿滥用"
    green "甬哥Github项目  ：github.com/yonggekkk"
    green "甬哥Blogger博客 ：ygkkk.blogspot.com"
    green "甬哥YouTube频道 ：www.youtube.com/@ygkkk"
@@ -1294,27 +1310,28 @@ menu() {
    echo   "------------------------------------------------------------"
    red    "2. 卸载删除 Serv00-sb-yg"
    echo   "------------------------------------------------------------"
-   green  "3. 重启 Serv00-sb-yg 主程序"
+   green  "3. 重启主进程"
    echo   "------------------------------------------------------------"
-   green  "4. 更新 Serv00-sb-yg 脚本"
+   green  "4. 更新脚本"
    echo   "------------------------------------------------------------"
    green  "5. 查看各节点分享/sing-box与clash订阅链接/CF节点proxyip"
    echo   "------------------------------------------------------------"
    green  "6. 查看sing-box与clash配置文件"
    echo   "------------------------------------------------------------"
-   yellow "7. 重置并清理所有服务进程(系统初始化)"
+   yellow "7. 删除所有端口并随机生成新端口"
+   echo   "------------------------------------------------------------"
+   yellow "8. 重置并清理所有服务进程(系统初始化)"
    echo   "------------------------------------------------------------"
    red    "0. 退出脚本"
    echo   "============================================================"
 nb=$(echo "$HOSTNAME" | cut -d '.' -f 1 | tr -d 's')
 ym=("$HOSTNAME" "cache$nb.serv00.com" "web$nb.serv00.com")
 rm -rf $WORKDIR/ip.txt $WORKDIR/hy2ip.txt
-for ip in "${ym[@]}"; do
-dig @8.8.8.8 +time=5 +short $ip >> $WORKDIR/hy2ip.txt
-sleep 1  
-done
+dig @8.8.8.8 +time=5 +short "web$nb.serv00.com" >> $WORKDIR/hy2ip.txt
+dig @8.8.8.8 +time=5 +short "$HOSTNAME" >> $WORKDIR/hy2ip.txt
+dig @8.8.8.8 +time=5 +short "cache$nb.serv00.com" >> $WORKDIR/hy2ip.txt
 for host in "${ym[@]}"; do
-response=$(curl -sL --connect-timeout 5 --max-time 7 "https://ss.serv0.us.kg/api/getip?host=$host")
+response=$(curl -sL --connect-timeout 5 --max-time 7 "https://ss.fkj.pp.ua/api/getip?host=$host")
 if [[ "$response" =~ ^$|unknown|not|error ]]; then
 dig @8.8.8.8 +time=5 +short $host >> $WORKDIR/ip.txt
 sleep 1 
@@ -1328,11 +1345,20 @@ fi
 done
 fi
 done
-green "Serv00服务器名称：$snb"
+green "Serv00服务器名称：${snb}"
+echo
 green "当前可选择的IP如下："
 cat $WORKDIR/ip.txt
 if [[ -e $WORKDIR/config.json ]]; then
 echo "如默认节点IP被墙，可在客户端地址更换以上任意一个显示可用的IP"
+fi
+echo
+portlist=$(devil port list | grep -E '^[0-9]+[[:space:]]+[a-zA-Z]+' | sed 's/^[[:space:]]*//')
+if [[ -n $portlist ]]; then
+green "已设置的端口如下："
+echo -e "$portlist"
+else
+yellow "未设置端口！请先选择 7 随机生成端口，再选择 1 安装脚本"
 fi
 echo
 insV=$(cat $WORKDIR/v 2>/dev/null)
@@ -1346,26 +1372,27 @@ echo -e "检测到最新 Serv00-sb-yg 脚本版本号：${yellow}${latestV}${re}
 echo -e "${yellow}$(curl -sL https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/sversion)${re}"
 fi
 echo -e "========================================================="
-ps aux | grep '[r]un -c con' > /dev/null && green "主进程运行正常" || yellow "主进程未启动…………请刷新一下保活网页"
+ps aux | grep '[r]un -c con' > /dev/null && green "Sing-box主进程运行正常" || yellow "Sing-box主进程启动失败，请检测节点是否可用"
 if [ -f "$WORKDIR/boot.log" ] && grep -q "trycloudflare.com" "$WORKDIR/boot.log" 2>/dev/null && ps aux | grep '[t]unnel --u' > /dev/null; then
 argosl=$(cat "$WORKDIR/boot.log" 2>/dev/null | grep -a trycloudflare.com | awk 'NR==2{print}' | awk -F// '{print $2}' | awk '{print $1}')
 checkhttp=$(curl -o /dev/null -s -w "%{http_code}\n" "https://$argosl")
 [ "$checkhttp" -eq 404 ] && check="域名有效" || check="域名可能无效"
-green "当前Argo临时域名：$argosl  $check"
+green "Argo临时域名：$argosl  $check"
 fi
 if [ -f "$WORKDIR/boot.log" ] && ! ps aux | grep '[t]unnel --u' > /dev/null; then
-yellow "当前Argo临时域名暂时不存在，请刷新一下保活网页，稍后可再次进入脚本查看"
+yellow "Argo临时域名暂时不存在，保活过程中会自动恢复"
 fi
 if ps aux | grep '[t]unnel --n' > /dev/null; then
 argogd=$(cat $WORKDIR/gdym.log 2>/dev/null)
 checkhttp=$(curl --max-time 2 -o /dev/null -s -w "%{http_code}\n" "https://$argogd")
 [ "$checkhttp" -eq 404 ] && check="域名有效" || check="域名可能失效"
-green "当前Argo固定域名：$argogd $check"
+green "Argo固定域名：$argogd $check"
 fi
 if [ ! -f "$WORKDIR/boot.log" ] && ! ps aux | grep '[t]unnel --n' > /dev/null; then
-yellow "当前Argo固定域名：$(cat $WORKDIR/gdym.log 2>/dev/null)，启用失败，请检查相关参数是否输入有误"
+yellow "Argo固定域名：$(cat $WORKDIR/gdym.log 2>/dev/null)，启动失败，请检查相关参数是否输入有误"
 fi
-green "请在浏览器输入多功能主页地址：http://${snb}.${USERNAME}.serv00.net"
+green "多功能主页如下：支持网页保活、网页重启、网页节点查询"
+purple "http://${snb}.${USERNAME}.serv00.net"
 #if ! crontab -l 2>/dev/null | grep -q 'serv00keep'; then
 #if [ -f "$WORKDIR/boot.log" ] || grep -q "trycloudflare.com" "$WORKDIR/boot.log" 2>/dev/null; then
 #check_process="! ps aux | grep '[c]onfig' > /dev/null || ! ps aux | grep [l]ocalhost > /dev/null"
@@ -1381,11 +1408,11 @@ green "请在浏览器输入多功能主页地址：http://${snb}.${USERNAME}.se
 #fi
 else
 echo -e "当前 Serv00-sb-yg 脚本版本号：${purple}${latestV}${re}"
-yellow "未安装 Serv00-sb-yg 脚本！请先选择 1 安装"
+yellow "未安装 Serv00-sb-yg 脚本！请选择 1 安装"
 fi
 #curl -sSL https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/serv00.sh -o serv00.sh && chmod +x serv00.sh
    echo -e "========================================================="
-   reading "请输入选择【0-7】: " choice
+   reading "请输入选择【0-8】: " choice
    echo
     case "${choice}" in
         1) install_singbox ;;
@@ -1394,9 +1421,10 @@ fi
 	4) fastrun && green "脚本已更新成功" && sleep 2 && sb ;; 
         5) showlist ;;
 	6) showsbclash ;;
-        7) kill_all_tasks ;;
+        7) resallport ;;
+        8) kill_all_tasks ;;
 	0) exit 0 ;;
-        *) red "无效的选项，请输入 0 到 7" ;;
+        *) red "无效的选项，请输入 0 到 8" ;;
     esac
 }
 menu
