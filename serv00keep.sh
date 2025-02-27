@@ -193,10 +193,10 @@ if [[ $tcp_ports -ne 2 || $udp_ports -ne 1 ]]; then
             fi
         done
     fi
-    echo "端口已调整完成,将断开ssh连接"
+    #echo "端口已调整完成,将断开ssh连接"
     sleep 3
-    devil binexec on >/dev/null 2>&1
-    kill -9 $(ps -o ppid= -p $$) >/dev/null 2>&1
+    #devil binexec on >/dev/null 2>&1
+    #kill -9 $(ps -o ppid= -p $$) >/dev/null 2>&1
 else
     tcp_ports=$(echo "$port_list" | awk '/tcp/ {print $1}')
     tcp_port1=$(echo "$tcp_ports" | sed -n '1p')
@@ -434,10 +434,10 @@ hy3p=$(sed -n '3p' hy2ip.txt)
    "route": {
        "rule_set": [
       {
-        "tag": "google",
+        "tag": "google-gemini",
         "type": "remote",
         "format": "binary",
-        "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/google.srs",
+        "url": "https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/sing/geo/geosite/google-gemini.srs",
         "download_detour": "direct"
       }
     ],
@@ -450,7 +450,7 @@ hy3p=$(sed -n '3p' hy2ip.txt)
      "outbound": "wg"
     },
     {
-     "rule_set":"google",
+     "rule_set":"google-gemini",
      "outbound": "wg"
     }
     ],

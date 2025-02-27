@@ -66,18 +66,19 @@ bash <(wget -qO- https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/sb
 
 [Serv00免费代理脚本最终教程（二）：Serv00不必再登录SSH了，部署保活融为一体，独家支持Github、VPS、软路由多平台多账户通用部署，四大方案总有一款适合你](https://youtu.be/rYeX1iU_iZ0)
 
-[Serv00免费代理脚本最终教程（三）：支持多功能网页【保活+重启+节点查看】、随意重置端口功能；Github+Workers自动执行保活功能任你选](https://youtu.be/9uCfFNnjNc0)
+[Serv00免费代理脚本最终教程（三）：多功能网页生成【保活+重启+重置端口+查看订阅节点】、随意重置端口功能；Github+Workers自动执行保活功能任你选！](https://youtu.be/9uCfFNnjNc0)
 
 ### 方案一、Serv00-sb-yg本地SSH专用一键脚本，快捷方式：```sb```
 ```
 bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/serv00.sh)
 ```
 
-### Serv00-sb-yg脚本界面预览图，仅限方案一的SSH端安装脚本（注：仅供围观）
-![f8a750020441713e60fad2f88721db6](https://github.com/user-attachments/assets/7057bee4-d30a-4e6d-b6d0-1896f702d907)
+### 支持多功能网页生成：网页保活+网页重启+网页重置端口+网页查看订阅节点
 
+#### Serv00-sb-yg脚本界面预览图，仅限方案一的SSH端安装脚本（注：仅供围观）
+![5ffb15af2d36e5869d6adf190da451b](https://github.com/user-attachments/assets/9faf6776-8d3f-4bcb-b579-f98c55454ca1)
 
-![d5f9309ca27a6ac1ca02dfb2dd8b4c3](https://github.com/user-attachments/assets/42dde173-7dbb-4d36-8e7d-5208a587d4e6)
+![a39f5972b1f33b71138fd9b45af6e53](https://github.com/user-attachments/assets/a2e069ea-80cb-4953-b034-3cb518444eb7)
 
 
 ### 方案二、Serv00多账号自动部署脚本：serv00.yml（github专用）
