@@ -5073,6 +5073,18 @@ sb
 fi
 }
 
+sbsm(){
+echo
+green "关注甬哥YouTube频道：https://www.youtube.com/@ygkkk 了解最新代理协议与翻墙动态"
+echo
+blue "sing-box-yg脚本视频教程：https://www.youtube.com/playlist?list=PLMgly2AulGG_Affv6skQXWnVqw7XWiPwJ"
+echo
+blue "sing-box-yg脚本博客说明：http://ygkkk.blogspot.com/2023/10/sing-box-yg.html"
+echo
+blue "sing-box-yg脚本项目地址：https://github.com/yonggekkk/x-ui-yg"
+echo
+}
+
 clear
 white "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" 
 echo -e "${bblue} ░██     ░██      ░██ ██ ██         ░█${plain}█   ░██     ░██   ░██     ░█${red}█   ░██${plain}  "
@@ -5106,6 +5118,9 @@ green "12. 管理 Acme 申请域名证书"
 green "13. 管理 Warp 查看Netflix/ChatGPT解锁情况"
 green "14. 添加 WARP-plus-Socks5 代理模式 【本地Warp/多地区Psiphon-VPN】"
 green "15. 双栈VPS切换IPV4/IPV6配置输出"
+white "----------------------------------------------------------------------------------"
+green "16. Sing-box-yg脚本使用说明书"
+white "----------------------------------------------------------------------------------"
 green " 0. 退出脚本"
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 insV=$(cat /etc/s-box/v 2>/dev/null)
@@ -5213,7 +5228,7 @@ showprotocol
 fi
 red "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo
-readp "请输入数字【0-15】:" Input
+readp "请输入数字【0-16】:" Input
 case "$Input" in  
  1 ) instsllsingbox;;
  2 ) unins;;
@@ -5230,5 +5245,6 @@ case "$Input" in
 13 ) cfwarp;;
 14 ) inssbwpph;;
 15 ) wgcfgo && sbshare;;
+16 ) sbsm;;
  * ) exit 
 esac
