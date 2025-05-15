@@ -56,8 +56,6 @@ bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/sb.
 
 * 主要增加reality协议默认支持 CF vless/trojan 节点的proxyip以及非标端口的优选反代IP功能
 
-* 支持多功能网页：1、保活(主程序与argo双线独立保活) 2、重启 3、重置端口 4、查看进程 5、查看订阅节点
-
 * 聚合通用节点分享，支持到22个节点：三协议各自三个IP，argo全覆盖13个端口节点，已添加不死优选IP
 
 #### 相关说明及注意点请查看[甬哥博客说明与Serv00视频教程](https://ygkkk.blogspot.com/2025/01/serv00.html)
@@ -74,9 +72,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/sb.
 
 [Serv00免费代理脚本最终教程（五）：Github、VPS、软路由多平台脚本大更新！支持多功能网页，Cron内射保活+网页外射保活，任你选](https://youtu.be/tKaBdbU4G4s)
 
-### 方案一、Serv00/Hostuno-sb-yg一键脚本 
-
-* 本地SSH专用，不要同时与方案二、方案三一起安装
+### Serv00/Hostuno-sb-yg一键脚本 
 
 * Argo高度自定义：可以重置临时隧道; 可以继续使用上回的固定隧道; 也可以更换固定隧道的域名或token
 
@@ -87,50 +83,6 @@ bash <(curl -Ls https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/ser
 #### Serv00/Hostuno-sb-yg脚本界面预览图，仅限方案一的SSH端安装脚本（注：仅供围观）
 ![a6b776a094566ab14e88fdcd70ba9e9](https://github.com/user-attachments/assets/90a918ed-aec7-4a1f-8159-97f3acfd0092)
 
-多功能网页预览图(支持所有方案现实)：1、保活 2、重启 3、重置端口 4、查看订阅节点
-![a39f5972b1f33b71138fd9b45af6e53](https://github.com/user-attachments/assets/a2e069ea-80cb-4953-b034-3cb518444eb7)
-
-
-### 方案二、Serv00多账号自动部署脚本：serv00.yml
-
-* github专用，不支持Hostuno，同服务器与方案三通用，不要与方案一同时使用
-* 创建私有库，修改serv00.yml文件的参数，运行github action，自动远程部署且保活单个或多个Serv00账号的节点
-* 切记！！！cron定时与网页保活只能二选一，同时运行可能会造成爆进程
-
-
-### 方案三、Serv00多账号自动部署脚本：kp.sh
-
-* VPS、软路由专用，不支持Hostuno，同服务器与方案二通用，不要与方案一同时使用
-* 修改kp.sh文件的参数，可在多个平台上自动远程部署且保活单个或多个Serv00账号的节点，不可用在serv00本地上，默认nano编辑形式
-* 也可以手动放在其他目录，做好cron定时或者使用网页保活
-
-```
-curl -sSL https://raw.githubusercontent.com/yonggekkk/sing-box-yg/main/kp.sh -o kp.sh && chmod +x kp.sh && nano kp.sh
-```
-
-### 注意：
-
-* 1、目前方案一SSH脚本仅支持网页保活。
-  
-* 2、方案二serv00.yml、方案三kp.sh都支持cron内射保活，也支持网页保活，但不建议同时使用
-
-* 3、方案二serv00.yml、方案三kp.sh的cron内射保活，前者通过github的cron定时，后者通过VPS、软路由的cron定时
-
-* 4、方案一SSH脚本、方案二serv00.yml、方案三kp.sh的网页保活，都可以通过github cron网页保活或者workers网页保活实现，见视频三
-
-* 5、方案二serv00.yml与方案三kp.sh在启用cron时，都为"内射保活脚本"，就算Serv00清空你服务器上所有文件(到目前为止从没发生过)，只要让你连接成功，就会自动安装脚本保活，保持不死状态
-
-* 6、关于VPS/github/软路由部署脚本 (方案二serv00.yml、方案三kp.sh)：
-
-  方式一（cron内射保活）：重置变量RES在重装、更新脚本、变更参数时，选择Y运行一次，后续必须改为N保存，可以不使用网页保活
-
-  方式二（网页保活）：每当重装、更新脚本、变更参数时，重置变量RES选择Y运行一次。此时cron内射定时建议加#表示删除不使用，后续只用网页保活
-
-  方式一（cron内射保活）与方式二（网页保活）不建议同时运行，容易引起进程爆满
-
-* 7、切记：方案二serv00.yml、方案三kp.sh，这两个方案千万不要与方案一SSH脚本同时运行，因为容易引起进程爆满，两者必须二选一
-
-* 8、如果进程爆满、进不了SSH、或者报错：bash: fork: retry: Resource temporarily unavailable，请参数[博客教程](https://ygkkk.blogspot.com/2025/01/serv00.html)中的红字说明，清空重置 
 
 -----------------------------------------------------
 ### 感谢支持！微信打赏甬哥侃侃侃ygkkk
